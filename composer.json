@@ -1,0 +1,31 @@
+{
+    "name": "lithemod/session",
+    "description": "Manages user sessions, allowing you to store and retrieve both persistent and temporary information between requests, such as login data, preferences, and short-term data.",
+    "type": "library",
+    "require": {
+        "php": "^8.0",
+        "lithemod/flow": "^1.0", 
+        "lithemod/log": "^1.0",  
+        "lithemod/session-support": "^1.0"
+    },
+    "autoload": {
+        "files": [
+            "src/session.php",
+            "src/flash.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require-dev": {
+        "phpunit/phpunit": "^11.0" 
+    },
+    "license": "MIT"
+}
