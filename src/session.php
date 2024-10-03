@@ -27,7 +27,7 @@ function session(array $options = [])
         'secure' => false,
         'httponly' => true,
         'samesite' => 'Lax',
-        'path' => __DIR__ . '/../sessions',
+        'path' => dirname(__DIR__, 4) . '/storage/framework/session',
     ];
 
     // Merge user options with default options
