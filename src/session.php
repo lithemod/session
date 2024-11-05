@@ -4,6 +4,8 @@ namespace Lithe\Middleware\Session;
 
 use Closure;
 use Exception;
+use Lithe\Middleware\Session\Core\DirectoryBasedSessionStore;
+use Lithe\Middleware\Session\Core\SessionConfig;
 use Lithe\Support\Log;
 
 /**
@@ -33,45 +35,43 @@ function session(array $options = [])
     // Merge user options with default options
     $options = array_merge($defaultOptions, $options);
 
-    return function (\Lithe\Http\Request $req, \Lithe\Http\Response $res, Closure $next) use ($options) {
-        // Validar o caminho antes de tentar criar o diretório
-        $savePath = realpath($options['path']) ?: $options['path'];
+    // Create SessionConfig instance
+    $config = new SessionConfig($options);
+    
+    // Get the session save path
+    $savePath = realpath($config->getPath()) ?: $config->getPath();
 
-        // Start session if not already active
+    return function (\Lithe\Http\Request $req, \Lithe\Http\Response $res, callable $next) use ($config, $savePath) {
         try {
-            // Check if session is not already active
             if (session_status() !== PHP_SESSION_ACTIVE) {
-                // Verifica se o diretório de salvamento existe, senão cria
-                if (!file_exists($savePath)) {
+                // Set the session save handler
+                session_set_save_handler(new DirectoryBasedSessionStore($savePath), true);
+
+                // Check if the session storage path exists, if not create it
+                if (!is_dir($savePath)) {
                     mkdir($savePath, 0755, true);
                 }
 
-                // Verifica se o diretório foi criado com sucesso
-                if (!is_dir($savePath)) {
-                    throw new \RuntimeException('Failed to create session save path directory.');
-                }
-
-                // Configura o PHP para usar o diretório especificado para salvar as sessões
+                // Set the session save path
                 session_save_path($savePath);
-                $lifetime = $options['lifetime'];
 
-                // Session lifetime configuration
-                ini_set("session.gc_maxlifetime", $lifetime);
-                ini_set("session.cookie_lifetime", $lifetime);
+                // Configure session lifetime
+                ini_set("session.gc_maxlifetime", $config->getLifetime());
+                ini_set("session.cookie_lifetime", $config->getLifetime());
 
-                // Session cookie configuration
+                // Set session cookie parameters
                 session_set_cookie_params([
-                    'lifetime' => $lifetime,
+                    'lifetime' => $config->getLifetime(),
                     'path' => '/',
-                    'domain' => $options['domain'],
-                    'secure' => $options['secure'],
-                    'httponly' => $options['httponly'],
-                    'samesite' => $options['samesite'],
+                    'domain' => $config->getDomain(),
+                    'secure' => $config->isSecure(),
+                    'httponly' => $config->isHttpOnly(),
+                    'samesite' => $config->getSameSite(),
                 ]);
 
                 // Start the session
-                if (session_start() === false) {
-                    throw new Exception('Failed to start the session.');
+                if (!session_start()) {
+                    throw new Exception('Failed to initialize the session.');
                 }
             }
         } catch (Exception $e) {
@@ -82,6 +82,7 @@ function session(array $options = [])
         // Assign session object to request
         $req->session = new \Lithe\Support\Session;
 
-        $next();
+        // Continue to the next middleware
+        return $next();
     };
 }

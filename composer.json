@@ -9,6 +9,9 @@
         "lithemod/session-support": "^1.0"
     },
     "autoload": {
+        "psr-4": {
+            "Lithe\\Middleware\\Session\\Core\\": "src/core/"
+        },
         "files": [
             "src/session.php",
             "src/flash.php"
