@@ -53,7 +53,7 @@ class SessionConfig {
      * @return string The domain associated with the session cookie.
      */
     public function getDomain(): string {
-        return $this->options['domain'];
+        return $this->options['domain'] ?? '';
     }
 
     /**
